@@ -1,77 +1,169 @@
 package lab1;
+
 import java.util.*;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.io.*;
-import java.util.Scanner;
+
+/**
+ * the code of lab1.
+ * @author tmy
+ */
 public class lab1 {
+	public static void copyExp(Vector<HashMap<Character, Integer>> a, Vector<HashMap<Character, Integer>> b) {
+		b.removeAll(b);
+		for (int i = 0; i < a.size(); i++){
+			HashMap<Character, Integer> t = new HashMap<Character, Integer>();
+			t = (HashMap) ((HashMap) a.get(i)).clone();
+			b.addElement(t);
+		}
+		return;
+	}
 	public static void main(String[] args) {
-		String copy="";
-		Vector<HashMap<Character,Integer>> exp=new Vector<HashMap<Character,Integer>>();
-		Scanner command=new Scanner(System.in);
-		while(true){
-			String infor=command.nextLine();
-			if(infor.charAt(0)!='!'){
-				copy=infor;
-				if(expression(infor,exp)==0){
-					Print(exp);
-				}
-				else
+		Vector<HashMap<Character, Integer>> exp ,expre;
+		exp = new Vector<HashMap<Character, Integer>>();
+		expre = new Vector<HashMap<Character, Integer>>();
+		@SuppressWarnings("resource")
+		Scanner command = new Scanner(System.in);
+		while (true) {
+			String infor = command.nextLine();
+			if (infor.charAt(0) != '!') {
+				if (expression(infor, exp) == 0) {
+					printAll(exp);
+				} else {
 					continue;
-			}
-			else if(infor.substring(1,4).equals("d/d")){
-				derivative(infor,exp,copy);
-			}
-			else if(infor.substring(1,9).equals("simplify")){
-				simplify(infor,exp,copy);
-			}
-			else{
+				}
+				copyExp(exp, expre);
+			} else if (infor.length() >= 9 && infor.substring(0, 9).equals("!simplify")) {
+				simplify(infor, exp);
+				copyExp(expre, exp);
+			} else if (infor.length() > 4 && infor.substring(0,4).equals("!d/d")){
+				derivative(infor, exp);
+				copyExp(expre, exp);
+			} else {
 				System.out.println("Error, no variable");
 			}
 		}
 	}
- 	public static int expression(String infor,Vector<HashMap<Character,Integer>> poly){
+	/**
+	 * print all the item in V.
+	 * @param V the vector of expression
+	 */
+	public static void printAll(Vector<HashMap<Character, Integer>> V) {
+		int flag = 0;
+		for (int i = 0; i < V.size(); i++) {
+			Iterator iter = V.get(i).entrySet().iterator();
+			while (iter.hasNext()) {
+				Map.Entry entry = (Map.Entry) iter.next();
+				Object key = entry.getKey();
+				Object val = entry.getValue();
+				if (key.equals(' ')) {
+					if (val.equals(1)) {
+						flag = 1;
+					} else {	
+						System.out.print(val);
+					}
+				} else {
+					for (int n = 0; n < (int) val; n++) {
+						if (flag == 0) {
+							System.out.print("*" + key);
+						} else {
+							System.out.print(key);
+						}
+						flag = 0;
+					}
+				}
+			}
+			if (i != V.size() - 1) {
+				System.out.print("+");
+			}
+		}
+		System.out.println("");
+	}
+	/**
+	 * to change the expression to the default style. 
+	 * @param v vector
+	 */
+	public static void check(Vector<HashMap<Character, Integer>> v) {
+		int sum = 0;
+		for (int i = 0; i < v.size(); i++) {
+			if (v.get(i).size() == 1 && v.get(i).get(' ') != null) {
+				sum = sum + (int) v.get(i).get(' ');
+				v.remove(i);
+				i = i - 1;
+			}
+		}
+		
+		if (sum != 0) {
+			HashMap<Character, Integer> SUM = new HashMap<Character, Integer>();
+			SUM.put(' ', sum);
+			v.add(SUM);
+		}
+	}
+	/**
+	 * Judge whether x is in the input char set(0~9,a~z,+*). 
+	 * @param x char
+	 * @return 1 or 0
+	 */
+	public static int Right(char x){
+		int flag=0;
+		if (x >= '0' && x <= '9' || x >= 'a' && x <= 'z' 
+				|| x == '+' || x == '*' || x == ' ' || x == '\t') {
+			flag = 1;
+		} else {
+			flag = 0;
+		}
+		return flag;
+	}
+ 	public static int expression(String infor,Vector<HashMap<Character,Integer>> V){
 		int NumTemp=1;
 		int temp=0;
-		boolean Changeflag=false;
+		boolean NumChange=false;
 		HashMap<Character,Integer> Term=new HashMap<Character,Integer>();
-		poly.removeAll(poly);
+		V.removeAll(V);
+		int ret = 0;
 		for(int i=0;i<infor.length();i++){
-			if(!(infor.charAt(i)>='0' && infor.charAt(i)<='9' || infor.charAt(i)>='a' && infor.charAt(i)<='z' || infor.charAt(i)=='+' ||infor.charAt(i)=='*' ||infor.charAt(i)==' ' ||infor.charAt(i)=='\t')){
+			if(Right(infor.charAt(i))==0){
 				System.out.println("Error, no variable");
-				return -1;
+				ret = -1;
 			}
-			if(infor.charAt(i)==' ' || infor.charAt(i)=='\t') continue;
+			if(infor.charAt(i)==' ' || infor.charAt(i)=='\t'){
+				continue;
+			}
 			if(infor.charAt(i)>=48 && infor.charAt(i)<=57){
 				temp=temp*10+infor.charAt(i)-'0';
+				NumChange=true;
 			}
 			else if(infor.charAt(i)=='*'){
 				if(temp!=0){
 					NumTemp=NumTemp*temp;
-					Changeflag=true;
+					NumChange=true;
 					temp=0;
 				}
 			}
 			else if(infor.charAt(i)=='+'){
 				if(temp!=0){
 					NumTemp=NumTemp*temp;
-					Changeflag=true;
 				}
-				if(Changeflag==true)
+				if(NumChange){
+					//if(temp==0)
+					//{
+						//NumTemp=0;
+					//}
 					Term.put(' ', NumTemp);
-				else
-					Term.put(' ',0);
-				poly.addElement(Term);
+				}else{
+					Term.put(' ',1);
+				}
+				V.addElement(Term);
 				Term=new HashMap<Character,Integer>();
 				NumTemp=1;
 				temp=0;
+				NumChange=false;
 			}
 			else{
-				if(Term.get(infor.charAt(i))!=null){
-					Term.put(infor.charAt(i), Integer.valueOf(Term.get(infor.charAt(i))+1));
+				if(Term.get(infor.charAt(i)) == null){
+					Term.put(infor.charAt(i), 1);
 				}
 				else{
-					Term.put(infor.charAt(i), 1);
+					Term.put(infor.charAt(i), Integer.valueOf(Term.get(infor.charAt(i))+1));
 				}
 			}
 		}
@@ -79,22 +171,19 @@ public class lab1 {
 			NumTemp=NumTemp*temp;
 		}
 		Term.put(' ', NumTemp);
-		poly.addElement(Term);
-		return 0;
+		V.addElement(Term);
+		return ret;
 	}
-	public static void simplify(String infor,Vector<HashMap<Character,Integer>> exp,String inforcopy){
-		Vector<HashMap<Character,Integer>> expClone=new Vector<HashMap<Character,Integer>>();
-		expClone=(Vector)exp.clone();
+	public static void simplify(String infor,Vector<HashMap<Character,Integer>> exp){
 		if(infor.length()==9){
-			Print(exp);
-		}
-		else{
+			printAll(exp);
+		} else {
 			char x=infor.charAt(10);
 			int value=0;
-			int mi=0;
-			int item=0;
+			
 			for(int i=10;i<infor.length();i++){
-				if(i<infor.length()-1 && infor.charAt(i)<48 && infor.charAt(i)>57 && infor.charAt(i+1)=='='){
+				int mi=0;
+				if(i<infor.length()-1 && (infor.charAt(i)<48 || infor.charAt(i)>57)&& infor.charAt(i+1)=='='){
 					x=infor.charAt(i);
 					continue;
 				}
@@ -103,69 +192,50 @@ public class lab1 {
 				}
 				if(infor.charAt(i)==' ' || i==infor.length()-1){
 					for(int j=0;j<exp.size();j++){
-						if(expClone.get(j).get(x)!=null){
+						if(exp.get(j).get(x)!=null){
+							//GET=true;
 							mi=exp.get(j).get(x);
 							for(int n=0;n<mi;n++){
-								expClone.get(j).put(' ',expClone.get(j).get(' ')*value);
+								exp.get(j).put(' ',exp.get(j).get(' ')*value);
 							}
-							expClone.get(j).remove(x);
+							exp.get(j).remove(x);
 						}
 					}
-					value=0;mi=0;item=0;
+					value=0;mi=0;
 				}
 			}
-			Print(expClone);
-			expression(inforcopy,exp);
+			check(exp);
+			printAll(exp);
 		}
 	}
-	public static void derivative(String infor,Vector<HashMap<Character,Integer>> exp,String inforcopy){
-		char var=infor.charAt(4);
-		boolean flag=false;
+	public static void derivative(String infor,Vector<HashMap<Character,Integer>> exp){
+		char c = infor.charAt(5);
+		Boolean GET=false;
 		for(int i=0;i<exp.size();i++){
+			
 			if(exp.get(i).size()==1){
 				exp.remove(i);
 				i--;
 			}
-			else if(exp.get(i).get(var)==null){
+			else if(exp.get(i).get(c)==null){
 				exp.remove(i);
 				i--;
 				continue;
 			}
 			else{
-				flag=true;
-				exp.get(i).put(' ', exp.get(i).get(' ')*exp.get(i).get(var));
-				exp.get(i).put(var, exp.get(i).get(var)-1);
-				if(exp.get(i).get(var)==0){
-					exp.get(i).remove(var);
+				GET=true;
+				exp.get(i).put(' ', exp.get(i).get(' ')*exp.get(i).get(c));
+				exp.get(i).put(c, exp.get(i).get(c)-1);
+				if(exp.get(i).get(c)==0){
+					exp.get(i).remove(c);
 				}
 			}
 		}
-		if(flag==false){
+		if(!GET){
 			System.out.println("Error, no variable");
 			return;
 		}
-		Print(exp);
-		expression(inforcopy,exp);
-	}
-
-public static void Print(Vector<HashMap<Character,Integer>> poly){
-	for(int i=0;i<poly.size();i++){
-		Iterator iter = poly.get(i).entrySet().iterator();
-		while (iter.hasNext()) {
-			Map.Entry entry = (Map.Entry) iter.next();
-			Object key = entry.getKey();
-			Object value = entry.getValue();
-			if(key.equals(' ')){
-				System.out.println(value);
-			}
-			else{
-				for(int n=0;n<(int)value;n++){
-					System.out.println("*"+key);
-				}
-			}
-		}
-		if(i<poly.size()){
-			System.out.print("+");
-		}
+		check(exp);
+		printAll(exp);
 	}
 }
